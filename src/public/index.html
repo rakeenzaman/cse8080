@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Run Child Process</title>
+</head>
+<body>
+    <script src="/libs/d3/dist/d3.min.js"></script>
+    <script src="/libs/d3-graphviz/build/d3-graphviz.min.js"></script>
+
+    <button id="runCmdButton">Run Command</button>
+    <div id="output" style="overflow: visible; height:100%; width:100%;"></div>
+
+    <script>
+        document.getElementById('runCmdButton').addEventListener('click', function() {
+        fetch('/run-command')
+            .then(response => response.json())
+            .then(data => {
+                //document.getElementById('output').textContent = data.data;
+                d3.select("#output").graphviz().renderDot(data.data);
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
+
+</body>
+</html>
