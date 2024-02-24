@@ -23,6 +23,13 @@ const cfg = './build/cfg';
 const options = ['input.cpp'];
 
 app.get('/run-command', (req, res) => {
+  fs.writeFile('input.cpp', req.query.data, (err) => {
+    if (err) {
+        console.error('An error occurred:', err);
+        return;
+    }
+    console.log('Content written to file successfully.');
+    });
   exec('./build/cfg input.cpp', (error, stdout, stderr) => {
       if (error) {
           console.error(`exec error: ${error}`);

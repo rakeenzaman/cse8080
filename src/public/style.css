@@ -1,0 +1,88 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Outfit:wght@100;200;400;800&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Rubik+Mono+One&display=swap');
+@import url("loading.css");
+* {
+    margin: 0px;
+}
+
+body {
+    background-color: #1e1e1e;
+}
+
+#main {
+    width: 100vw;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+}
+
+#header {
+    color: white;
+    font-family: Montserrat, Arial, sans-serif;
+    margin: 10px;
+    margin-bottom: 5px;
+}
+
+#output {
+    box-shadow: 0px 0px 5px #75C4FF;
+    margin: 10px;
+    margin-left: 5px;
+    display: flex;
+    width: 50%;
+    height: 800px;
+    border: 2px solid #75C4FF;
+    border-radius: 15px;
+    overflow: hidden;
+    background-color: white;
+}
+
+#editor {
+    box-shadow: 0px 0px 5px #75C4FF;
+    margin: 10px;
+    margin-right: 5px;
+    width: 50%;
+    height: 800px;
+    border-radius: 15px;
+    overflow: hidden;
+    border: 2px solid #75C4FF;
+}
+
+#runCmdButton {
+    margin: 10px;
+    margin-bottom: 5px;
+    padding: 16px;
+    border-radius: 15px;
+    background-color: #75C4FF;
+    color: #F7FBFF;
+    border: 1px solid #F7FBFF;
+    font-size: 22px;
+    font-family: Montserrat, Arial, sans-serif;
+    transition: ease-in-out 0.2s;
+}
+
+#runCmdButton:hover {
+    box-shadow: 0px 0px 5px #75C4FF;
+    cursor: pointer;
+    transition: ease-in-out 0.2s;
+    background-color: #F7FBFF;
+    color: #75C4FF;
+    border: 1px solid #75C4FF;
+}
+
+#placeholder_text {
+    color: #75C4FF;
+    font-family: Montserrat, Arial, sans-serif;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    font-weight: 500;
+    margin: auto;
+}
+
+#spinner-container {
+    display: none;
+    justify-content: center;
+    align-items: center;
+    margin: auto;
+}
+

@@ -1,22 +1,54 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Run Child Process</title>
+    <title>CFG++</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <script src="/libs/d3/dist/d3.min.js"></script>
     <script src="/libs/d3-graphviz/build/d3-graphviz.min.js"></script>
+    <script src="https://unpkg.com/monaco-editor/min/vs/loader.js"></script>
 
-    <button id="runCmdButton">Run Command</button>
-    <div id="output" style="overflow: visible; height:100%; width:100%;"></div>
+    <div id="header">
+        <h2> CFG++ (Rakeen Zaman CSE 8080 Directed Project)</h2>
+        <h3>Created with C++ (Clang) and Javascript (Node.js)</h3>
+    </div>
+    <input type="button" id="runCmdButton" value="Create CFG"></input>
+    <div id="main">
+        <div id="editor"></div>
+        <div id="output">
+            <h1 id="placeholder_text">Click "Create CFG" To Generate Your Control Flow Graph</h1>
+            <div id="spinner-container">
+                <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
+            </div>
+        </div>
+    </div>
 
     <script>
+        var editor;
+        require.config({ paths: { 'vs': 'https://unpkg.com/monaco-editor/min/vs' }});
+
+        require(['vs/editor/editor.main'], function() {
+            var initialValue = localStorage.getItem("initialValueCfg") || '// enter your code here';
+            editor = monaco.editor.create(document.getElementById('editor'), {
+                value: [
+                    initialValue
+                ].join('\n'),
+                language: 'cpp',
+            });
+            monaco.editor.setTheme('vs-dark');
+        });
+
         document.getElementById('runCmdButton').addEventListener('click', function() {
-        fetch('/run-command')
+        document.getElementById("placeholder_text").style.display = "none";
+        document.getElementById("spinner-container").style.display = "block";
+        localStorage.setItem("initialValueCfg", editor.getValue());
+        const queryString = encodeURIComponent(editor.getValue());
+        fetch(`/run-command?data=${queryString}`)
             .then(response => response.json())
             .then(data => {
-                //document.getElementById('output').textContent = data.data;
                 d3.select("#output").graphviz().renderDot(data.data);
+                document.getElementById("spinner-container").style.display = "none";
             })
             .catch(error => console.error('Error:', error));
         });
