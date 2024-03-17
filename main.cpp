@@ -9,6 +9,7 @@
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Tooling/Tooling.h>
 #include <clang/Analysis/CFG.h>
+#include <vector>
 
 using namespace std;
 using namespace clang;
@@ -20,13 +21,13 @@ static cl::opt<string> InputFile(cl::Positional, cl::desc("<input file>"), cl::R
 
 class CFGVisitor {
 public:
-    CFGVisitor(ofstream& DotFile, ASTContext &Context, const string &FunctionName)
-        : DotFile(DotFile), Context(Context), FunctionName(FunctionName) {}
+    CFGVisitor(ofstream& DotFile, ASTContext &Context, const string &FunctionName, const string &FunctionType, const string &FunctionParameters)
+        : DotFile(DotFile), Context(Context), FunctionName(FunctionName), FunctionType(FunctionType), FunctionParameters(FunctionParameters) {}
 
     void VisitCFG(const CFG& cfg) {
 
         //Starting off the DOT graph
-        DotFile << "digraph \"" << FunctionName << "\" {\n";
+        DotFile << "digraph \"" << (FunctionName + ";" + FunctionType + ";" + FunctionParameters) << "\" {\n";
         DotFile << "  node [shape=rectangle];\n";
 
         // Visiting each block
@@ -50,9 +51,13 @@ private:
     ofstream& DotFile;
     ASTContext &Context;
     string FunctionName;
+    string FunctionType;
+    string FunctionParameters;
 
     void PrintStatement(const Stmt *S, ASTContext &Context, raw_string_ostream &Stream) {
     if (!S) return;
+
+    cout << S->getStmtClassName() << endl;
 
     // Handle if statements
     if (const IfStmt *IfS = dyn_cast<IfStmt>(S)) {
@@ -65,12 +70,26 @@ private:
             Stream << "Else\\l";
             PrintStatement(IfS->getElse(), Context, Stream);
         }
+    } 
     // Handle declarations
-    } else if (isa<DeclStmt>(S)) {
+    /*
+    else if (isa<DeclStmt>(S)) {
         Stream << "Declaration: ";
         S->printPretty(Stream, nullptr, PrintingPolicy(Context.getLangOpts()));
         Stream << "\\l";
-    } else if (const ReturnStmt *RS = dyn_cast<ReturnStmt>(S)){
+    } 
+    */
+    else if (isa<WhileStmt>(S)) {
+        Stream << "While: ";
+        S->printPretty(Stream, nullptr, PrintingPolicy(Context.getLangOpts()));
+        Stream << "\\l";
+    } 
+    else if (isa<CallExpr>(S)) {
+        Stream << "Function Called: ";
+        S->printPretty(Stream, nullptr, PrintingPolicy(Context.getLangOpts()));
+        Stream << "\\l";
+    }
+    else if (const ReturnStmt *RS = dyn_cast<ReturnStmt>(S)){
         string ReturnStr;
         raw_string_ostream ReturnStream(ReturnStr);
         RS->printPretty(ReturnStream, nullptr, PrintingPolicy(Context.getLangOpts()));
@@ -96,6 +115,19 @@ private:
 
 }
 
+string escapeDoubleQuotes(const string& input) {
+    string output;
+
+    for (char ch : input) {
+        if (ch == '\"') {
+            output += "\\\"";
+        } else {
+            output += ch;
+        }
+    }
+    return output;
+}
+
 // Visiting blocks of the CFG built by clang
 void VisitBlock(const CFGBlock *Block, ASTContext &Context, ofstream& DotFile, const CFG &cfg) { 
     string BlockLabel;
@@ -103,10 +135,10 @@ void VisitBlock(const CFGBlock *Block, ASTContext &Context, ofstream& DotFile, c
 
     if (Block == &cfg.getEntry()) {
         // Labeling entry block
-        BlockStream << "entry point";
+        BlockStream << "ENTRY POINT";
     } else if (Block == &cfg.getExit()) {
         // Labeling exit block
-        BlockStream << "end";
+        BlockStream << "END";
     } else {
         for (const CFGElement &Element : *Block) {
             if (Element.getKind() == CFGElement::Statement) {
@@ -117,7 +149,7 @@ void VisitBlock(const CFGBlock *Block, ASTContext &Context, ofstream& DotFile, c
     }
 
     // Printing everything out in DOT format
-    DotFile << "  Block" << Block->getBlockID() << " [label=\"" << BlockStream.str() << "\\l\"];\n";
+    DotFile << "  Block" << Block->getBlockID() << " [label=\"" << escapeDoubleQuotes(BlockStream.str()) << "\\l\"];\n";
 }
 
 
@@ -148,6 +180,32 @@ string GetStatementLabel(const Stmt *Statement) {
 
 };
 
+vector<vector<string>> getFunctionParamsAsVector(const FunctionDecl *funcDecl) {
+    unsigned numOfParams = funcDecl->getNumParams();
+    vector<vector<string>> params;
+    for (unsigned i = 0; i < numOfParams; i++) {
+        vector<string> param;
+        // setting first value in vector as the param type
+        param.push_back(funcDecl->getParamDecl(i)->getType().getNonReferenceType().getUnqualifiedType().getAsString());
+        // setting second value as name of param
+        param.push_back(funcDecl->getParamDecl(i)->getNameAsString());
+        // putting it in vector that will be returned
+        params.push_back(param);
+    }
+    return params;
+}
+
+string funcParamVectorToString(vector<vector<string>> params) {
+    string convertedToString = "";
+    for (int i = 0; i < params.size(); i++) {
+        convertedToString += (params[i][0] + " " +  params[i][1]);
+        if (i != (params.size() - 1)) {
+            convertedToString += ", ";
+        }
+    }
+    return convertedToString;
+}
+
 // Overriding ASTConsumer
 class MyASTConsumer : public ASTConsumer {
 public:
@@ -165,12 +223,14 @@ public:
             // Checking if the function is defined in main.cpp
             if (funcDecl->hasBody() && sourceManager.isInMainFile(funcDecl->getLocation())) { 
             string FunctionName = funcDecl->getNameAsString();
+            string FunctionType = funcDecl->getReturnType().getAsString();
+            string FunctionParameters = funcParamVectorToString(getFunctionParamsAsVector(funcDecl));
                 CFG::BuildOptions BuildOpts;
                 // Using built-in builgCFG function for clang
                 unique_ptr<CFG> FuncCFG = CFG::buildCFG(funcDecl, funcDecl->getBody(), &Context, BuildOpts);
                 // Visiting CFG
                 if (FuncCFG) {
-                    CFGVisitor Visitor(DotFile, Context, FunctionName);
+                    CFGVisitor Visitor(DotFile, Context, FunctionName, FunctionType, FunctionParameters);
                     Visitor.VisitCFG(*FuncCFG);
                 }
             }

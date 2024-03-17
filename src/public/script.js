@@ -1,15 +1,83 @@
-function getGraphName(dotData) {
-    var lines = dotData.split('\n');
-    var digraphName = null;
-    for (var i = 0; i < lines.length; i++) {
-        var line = lines[i].trim();
+var editor;
+var map;
+var yea = false;
 
-        if (line.startsWith('digraph')) {
-            digraphName = line.split(' ')[1];
-            break;
+var btn = document.getElementById('runCmdButton');
+
+btn.addEventListener('click', function() {
+    document.getElementById("error").style.display = "none";
+    d3.select("#output").selectAll("svg").style("display", "none");
+    document.getElementById("placeholder_text").style.display = "none";
+    document.getElementById("spinner-container").style.display = "block";
+    localStorage.setItem("initialValueCfg", editor.getValue());
+    const queryString = encodeURIComponent(editor.getValue());
+    fetch(`/run-command?data=${queryString}`)
+        .then(response => response.json())
+        .then(data => {
+            var container = d3.select("#output");
+            container.graphviz().renderDot(data.data);
+            document.getElementById('functionName').innerHTML = getGraphName(getGraphData(data.data));
+            document.getElementById('functionParams').innerHTML = getGraphParams(getGraphData(data.data));
+            document.getElementById('functionType').innerHTML = getGraphType(getGraphData(data.data));
+            console.log(data);
+
+            var graphs = data.data.split(/(?=digraph )/);
+
+            graphs = graphs.filter(function(graph) {
+                return graph.trim().length > 0;
+            });
+            loading = true;
+            document.getElementById("spinner-container").style.display = "none";
+
+
+
+            map = createMap(data.data);
+            setOptions(map);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById("error").style.display = "block";
+            d3.select("#output").selectAll("svg").style("display", "none");
+
+        });
+    });
+
+    var dropdown = document.getElementById("dropdown");
+        dropdown.addEventListener("change", function() {
+        var selectedKey = this.value;
+        var selectedValue = map.get(selectedKey);
+        if (selectedValue !== null) {
+            try {
+                d3.select("#output").graphviz().renderDot(selectedValue);
+                document.getElementById("error").style.display = "none";
+                document.getElementById('functionName').innerHTML = getGraphName(getGraphData(selectedValue));
+                document.getElementById('functionParams').innerHTML = getGraphParams(getGraphData(selectedValue));
+                document.getElementById('functionType').innerHTML = getGraphType(getGraphData(selectedValue));
+            } catch (error) {
+                document.getElementById("error").style.display = "block";
+                d3.select("#output").selectAll("svg").style("display", "none");
+            }
         }
-    }
-    return digraphName;
+    });
+
+function splitData(digraphName) {
+    return digraphName.split(";");
+}
+
+function getGraphName(digraphName) {
+    return splitData(digraphName)[0];
+}
+
+function getGraphType(digraphName) {
+    return splitData(digraphName)[1];
+}
+
+function getGraphParams(digraphName) {
+    return splitData(digraphName)[2];
+}
+
+function getGraphData(dotData) {
+    return dotData.match(/"([^"]*)"/)[1];
 }
 
 function splitGraphsIntoArray(data) {
@@ -25,7 +93,7 @@ function createMap(data) {
     const map = new Map();
 
     for (let i = 0; i < arrayOfGraphs.length; i++) {
-        map.set(getGraphName(arrayOfGraphs[i]), arrayOfGraphs[i]);
+        map.set(getGraphName(getGraphData(arrayOfGraphs[i])), arrayOfGraphs[i]);
     }
     return map
 }

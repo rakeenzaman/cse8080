@@ -5,31 +5,54 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <script src="script.js"></script>
     <script src="/libs/d3/dist/d3.min.js"></script>
     <script src="/libs/d3-graphviz/build/d3-graphviz.min.js"></script>
     <script src="https://unpkg.com/monaco-editor/min/vs/loader.js"></script>
 
     <div id="header">
-        <h2> CFG++ (Rakeen Zaman CSE 8080 Directed Project)</h2>
-        <h3>Created with C++ (Clang) and Javascript (Node.js)</h3>
+        <div style="text-align: left;">
+            <h1>CFG++</h1>
+            <h3>v1.0.0</h3>
+        </div>
+        <div>
+            <h2> Rakeen Zaman CSE 8080 Directed Project (prototype)</h2>
+            <h3>Created with C++ (Clang) and Javascript (Node.js)</h3>
+        </div>
     </div>
-    <input type="button" id="runCmdButton" value="Create CFG"></input>
-    <select id="dropdown">
+    <div id="functionData">
+        <div id="functionDataRow">
+            <h2>Function Name:</h2>
+            <h3 id="functionName">none</h2>
+        </div>
+        <div id="functionDataRow">
+            <h2>Function Return Type:</h2>
+            <h3 id="functionType">none</h2>
+        </div>
+        <div id="functionDataRow">
+            <h2>Function Parameters:</h2>
+            <h3 id="functionParams">none</h2>
+        </div>
+    </div>
+    <div style="display: flex; justify-content: space-between;">
+        <input type="button" id="runCmdButton" value="Create CFG"></input>
+        <select id="dropdown">
+            <option value="" disabled selected>Select your option</option>
+        </select>
+    </div>
     </select>
     <div id="main">
         <div id="editor"></div>
         <div id="output">
             <h1 id="placeholder_text">Click "Create CFG" To Generate Your Control Flow Graph</h1>
+            <h1 id="error">Error! Make sure your code is correct.</h1>
             <div id="spinner-container">
                 <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
             </div>
         </div>
     </div>
 
+    <script src="script.js"></script>
     <script>
-        var editor;
-        var map;
         require.config({ paths: { 'vs': 'https://unpkg.com/monaco-editor/min/vs' }});
 
         require(['vs/editor/editor.main'], function() {
@@ -42,43 +65,6 @@
             });
             monaco.editor.setTheme('vs-dark');
         });
-
-        document.getElementById('runCmdButton').addEventListener('click', function() {
-        document.getElementById("placeholder_text").style.display = "none";
-        document.getElementById("spinner-container").style.display = "block";
-        localStorage.setItem("initialValueCfg", editor.getValue());
-        const queryString = encodeURIComponent(editor.getValue());
-        fetch(`/run-command?data=${queryString}`)
-            .then(response => response.json())
-            .then(data => {
-                var container = d3.select("#output");
-                container.graphviz().renderDot(data.data);
-
-                var graphs = data.data.split(/(?=digraph )/);
-
-                graphs = graphs.filter(function(graph) {
-                    return graph.trim().length > 0;
-                });
-                console.log(graphs);
-                document.getElementById("spinner-container").style.display = "none";
-
-
-
-                map = createMap(data.data);
-                setOptions(map);
-            })
-            .catch(error => console.error('Error:', error));
-        });
-
-        var dropdown = document.getElementById("dropdown");
-            dropdown.addEventListener("change", function() {
-            var selectedKey = this.value;
-            var selectedValue = map.get(selectedKey);
-            if (selectedValue !== null) {
-                d3.select("#output").graphviz().renderDot(selectedValue);
-            }
-        });
-
     </script>
 
 </body>
