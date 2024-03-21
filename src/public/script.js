@@ -1,17 +1,24 @@
 var editor;
 var map;
-var yea = false;
 
-var btn = document.getElementById('runCmdButton');
+document.addEventListener('DOMContentLoaded', (event) => {
+    document.getElementById('runCmdButton').addEventListener('click', createCFG);
+  });
 
-btn.addEventListener('click', function() {
+function createCFG() {
     document.getElementById("error").style.display = "none";
     d3.select("#output").selectAll("svg").style("display", "none");
     document.getElementById("placeholder_text").style.display = "none";
     document.getElementById("spinner-container").style.display = "block";
     localStorage.setItem("initialValueCfg", editor.getValue());
     const queryString = encodeURIComponent(editor.getValue());
-    fetch(`/run-command?data=${queryString}`)
+    fetch('/run-command', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ data: editor.getValue() })
+        })
         .then(response => response.json())
         .then(data => {
             var container = d3.select("#output");
@@ -40,25 +47,21 @@ btn.addEventListener('click', function() {
             d3.select("#output").selectAll("svg").style("display", "none");
 
         });
-    });
+    };
 
-    var dropdown = document.getElementById("dropdown");
-        dropdown.addEventListener("change", function() {
-        var selectedKey = this.value;
-        var selectedValue = map.get(selectedKey);
-        if (selectedValue !== null) {
-            try {
-                d3.select("#output").graphviz().renderDot(selectedValue);
-                document.getElementById("error").style.display = "none";
-                document.getElementById('functionName').innerHTML = getGraphName(getGraphData(selectedValue));
-                document.getElementById('functionParams').innerHTML = getGraphParams(getGraphData(selectedValue));
-                document.getElementById('functionType').innerHTML = getGraphType(getGraphData(selectedValue));
-            } catch (error) {
-                document.getElementById("error").style.display = "block";
-                d3.select("#output").selectAll("svg").style("display", "none");
-            }
-        }
-    });
+async function openFileExplorer() {
+    let [fileHandle] = await window.showOpenFilePicker({
+        types: [
+          {
+            description: 'C++ Files',
+            accept: {'text/cpp': ['.cpp']}
+          }
+        ]
+      });
+    let fileData = await fileHandle.getFile();
+    let text = await fileData.text();
+    editor.setValue(text);
+}
 
 function splitData(digraphName) {
     return digraphName.split(";");

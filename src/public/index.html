@@ -5,6 +5,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <script src="script.js"></script>
     <script src="/libs/d3/dist/d3.min.js"></script>
     <script src="/libs/d3-graphviz/build/d3-graphviz.min.js"></script>
     <script src="https://unpkg.com/monaco-editor/min/vs/loader.js"></script>
@@ -19,25 +20,32 @@
             <h3>Created with C++ (Clang) and Javascript (Node.js)</h3>
         </div>
     </div>
-    <div id="functionData">
-        <div id="functionDataRow">
-            <h2>Function Name:</h2>
-            <h3 id="functionName">none</h2>
-        </div>
-        <div id="functionDataRow">
-            <h2>Function Return Type:</h2>
-            <h3 id="functionType">none</h2>
-        </div>
-        <div id="functionDataRow">
-            <h2>Function Parameters:</h2>
-            <h3 id="functionParams">none</h2>
-        </div>
+    <div id="upload">
+        <div class="upload-text">Copy/paste your code into the editor or</div>
+        <button onClick="openFileExplorer()" id="upload-button">Upload File</button>
+        <div class="upload-text">and click 'Create CFG'</div>
     </div>
     <div style="display: flex; justify-content: space-between;">
-        <input type="button" id="runCmdButton" value="Create CFG"></input>
-        <select id="dropdown">
-            <option value="" disabled selected>Select your option</option>
-        </select>
+        <input type="button" id="runCmdButton" value="CREATE CFG"></input>
+        <div style="width: 50%; display: flex; justify-content: space-between;">
+            <div id="functionData">
+                <div id="functionDataRow">
+                    <h2>Function Name:</h2>
+                    <h3 id="functionName">none</h2>
+                </div>
+                <div id="functionDataRow">
+                    <h2>Function Return Type:</h2>
+                    <h3 id="functionType">none</h2>
+                </div>
+                <div id="functionDataRow">
+                    <h2>Function Parameters:</h2>
+                    <h3 id="functionParams">none</h2>
+                </div>
+            </div>
+            <select id="dropdown">
+                <option value="" disabled selected>SELECT FUNCTION</option>
+            </select>
+        </div>
     </div>
     </select>
     <div id="main">
@@ -50,8 +58,6 @@
             </div>
         </div>
     </div>
-
-    <script src="script.js"></script>
     <script>
         require.config({ paths: { 'vs': 'https://unpkg.com/monaco-editor/min/vs' }});
 
@@ -65,6 +71,24 @@
             });
             monaco.editor.setTheme('vs-dark');
         });
+
+        var dropdown = document.getElementById("dropdown");
+        dropdown.addEventListener("change", function() {
+        var selectedKey = this.value;
+        var selectedValue = map.get(selectedKey);
+        if (selectedValue !== null) {
+            try {
+                d3.select("#output").graphviz().renderDot(selectedValue);
+                document.getElementById("error").style.display = "none";
+                document.getElementById('functionName').innerHTML = getGraphName(getGraphData(selectedValue));
+                document.getElementById('functionParams').innerHTML = getGraphParams(getGraphData(selectedValue));
+                document.getElementById('functionType').innerHTML = getGraphType(getGraphData(selectedValue));
+            } catch (error) {
+                document.getElementById("error").style.display = "block";
+                d3.select("#output").selectAll("svg").style("display", "none");
+            }
+        }
+    });
     </script>
 
 </body>

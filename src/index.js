@@ -13,6 +13,8 @@ const port = 3000;
 app.use(express.static(__dirname + '/public'));
 
 app.use('/libs', express.static(path.join(__dirname, '..', 'node_modules')));
+app.use(express.json());
+
 
 app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}`);
@@ -22,8 +24,8 @@ const cfg = './build/cfg';
 
 const options = ['input.cpp'];
 
-app.get('/run-command', (req, res) => {
-  fs.writeFile('input.cpp', req.query.data, (err) => {
+app.post('/run-command', (req, res) => {
+  fs.writeFile('input.cpp', req.body.data, (err) => {
     if (err) {
         console.error('An error occurred:', err);
         return;
