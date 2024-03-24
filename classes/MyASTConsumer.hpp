@@ -54,25 +54,35 @@ public:
     SourceManager &sourceManager = Context.getSourceManager();
 
     for (const Decl *decl : Context.getTranslationUnitDecl()->decls()) {
-        // Checking for function decl
         if (const FunctionDecl *funcDecl = dyn_cast<FunctionDecl>(decl)) {
-            // Checking if the function is defined in main.cpp
-            if (funcDecl->hasBody() && sourceManager.isInMainFile(funcDecl->getLocation())) { 
-            string FunctionName = funcDecl->getNameAsString();
-            string FunctionType = funcDecl->getReturnType().getAsString();
-            string FunctionParameters = funcParamVectorToString(getFunctionParamsAsVector(funcDecl));
-                CFG::BuildOptions BuildOpts;
-                // Using built-in builgCFG function for clang
-                unique_ptr<CFG> FuncCFG = CFG::buildCFG(funcDecl, funcDecl->getBody(), &Context, BuildOpts);
-                // Visiting CFG
-                if (FuncCFG) {
-                    CFGVisitor Visitor(DotFile, Context, FunctionName, FunctionType, FunctionParameters);
-                    Visitor.VisitCFG(*FuncCFG);
+            if (funcDecl->hasBody() && sourceManager.isInMainFile(funcDecl->getLocation())) {
+                ProcessFunction(funcDecl, Context);
+            }
+        }
+        else if (const CXXRecordDecl *classDecl = dyn_cast<CXXRecordDecl>(decl)) {
+            if (classDecl->isThisDeclarationADefinition() && sourceManager.isInMainFile(classDecl->getLocation())) {
+                for (const Decl *memberDecl : classDecl->decls()) {
+                    if (const CXXMethodDecl *methodDecl = dyn_cast<CXXMethodDecl>(memberDecl)) {
+                        if (methodDecl->hasBody()) {
+                            ProcessFunction(methodDecl, Context);
+                        }
+                    }
                 }
             }
         }
     }
-    cout << "finished";
+}
+
+void ProcessFunction(const FunctionDecl *funcDecl, ASTContext &Context) {
+    string FunctionName = funcDecl->getNameAsString();
+    string FunctionType = funcDecl->getReturnType().getAsString();
+    string FunctionParameters = funcParamVectorToString(getFunctionParamsAsVector(funcDecl));
+    CFG::BuildOptions BuildOpts;
+    unique_ptr<CFG> FuncCFG = CFG::buildCFG(funcDecl, funcDecl->getBody(), &Context, BuildOpts);
+    if (FuncCFG) {
+        CFGVisitor Visitor(DotFile, Context, FunctionName, FunctionType, FunctionParameters);
+        Visitor.VisitCFG(*FuncCFG);
+    }
 }
 
 private:
