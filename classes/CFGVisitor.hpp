@@ -9,6 +9,10 @@
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Tooling/Tooling.h>
 #include <clang/Analysis/CFG.h>
+#include <clang/Basic/SourceLocation.h>
+#include <clang/Basic/SourceManager.h>
+#include <clang/Rewrite/Core/Rewriter.h>
+#include <llvm/Support/raw_ostream.h>
 #include <vector>
 
 using namespace std;
@@ -54,47 +58,52 @@ private:
     void PrintStatement(const Stmt *S, ASTContext &Context, raw_string_ostream &Stream) {
     if (!S) return;
 
-    cout << S->getStmtClassName() << endl;
+    SourceManager &SM = Context.getSourceManager();
+    SourceLocation BeginLoc = S->getBeginLoc();
+    StringRef lineString = "";
+    if (BeginLoc.isValid()) {
+        PresumedLoc PLoc = SM.getPresumedLoc(BeginLoc);
+        if (PLoc.isValid()) {
+            unsigned Line = PLoc.getLine();
 
-    // Handle if statements
-    if (const IfStmt *IfS = dyn_cast<IfStmt>(S)) {
-        Stream << "If (";
-        IfS->getCond()->printPretty(Stream, nullptr, PrintingPolicy(Context.getLangOpts()));
-        Stream << ")\\l";
+            SourceLocation LineStart = SM.translateLineCol(SM.getFileID(BeginLoc), Line, 1);
+            SourceLocation LineEnd = SM.translateLineCol(SM.getFileID(BeginLoc), Line, UINT_MAX);
+            SourceRange LineRange(LineStart, LineEnd);
 
-        PrintStatement(IfS->getThen(), Context, Stream);
-        if (IfS->getElse()) {
-            Stream << "Else\\l";
-            PrintStatement(IfS->getElse(), Context, Stream);
+            Rewriter Rewriter;
+            Rewriter.setSourceMgr(SM, Context.getLangOpts());
+            lineString = Lexer::getSourceText(CharSourceRange::getTokenRange(LineRange), SM, Context.getLangOpts());
         }
-    } 
-    // Handle declarations
-    /*
-    else if (isa<DeclStmt>(S)) {
-        Stream << "Declaration: ";
-        S->printPretty(Stream, nullptr, PrintingPolicy(Context.getLangOpts()));
-        Stream << "\\l";
-    } 
-    */
-    else if (isa<WhileStmt>(S)) {
-        Stream << "While: ";
-        S->printPretty(Stream, nullptr, PrintingPolicy(Context.getLangOpts()));
-        Stream << "\\l";
-    } 
-    else if (isa<CallExpr>(S)) {
-        Stream << "Function Called: ";
-        S->printPretty(Stream, nullptr, PrintingPolicy(Context.getLangOpts()));
-        Stream << "\\l";
     }
-    else if (const ReturnStmt *RS = dyn_cast<ReturnStmt>(S)){
+
+    if (isa<CallExpr>(S)) {
+        Stream << "FUNCTION CALLED: ";
+        S->printPretty(Stream, nullptr, PrintingPolicy(Context.getLangOpts()));
+        Stream << "\\l";
+    } else if (isa<DeclStmt>(S)) {
+        Stream << "DECLARATION: ";
+        S->printPretty(Stream, nullptr, PrintingPolicy(Context.getLangOpts()));
+        Stream << "\\l";
+    } else if (const ReturnStmt *RS = dyn_cast<ReturnStmt>(S)) {
         string ReturnStr;
         raw_string_ostream ReturnStream(ReturnStr);
         RS->printPretty(ReturnStream, nullptr, PrintingPolicy(Context.getLangOpts()));
         ReturnStream.flush();
-        Stream << " returned.";
-    }else {
+        Stream << "  RETURNED.";
+    } else {
+        if (isa<BinaryOperator>(S)) {
+            if (lineString.find("while") != llvm::StringRef::npos) {
+                Stream << "WHILE LOOP CONDITION: ";
+            } else if (lineString.find("for") != llvm::StringRef::npos) {
+                Stream << "FOR LOOP CONDITION: ";
+            } else if (lineString.find("if") != llvm::StringRef::npos) {
+                Stream << "IF CONDITION: ";
+            }
+        }
         S->printPretty(Stream, nullptr, PrintingPolicy(Context.getLangOpts()));
-        Stream << "\\l";
+        if (lineString.find("return") == llvm::StringRef::npos) {
+                Stream << "\\l";
+            }
     }
 
 }
@@ -123,6 +132,9 @@ void VisitBlock(const CFGBlock *Block, ASTContext &Context, ofstream& DotFile, c
     } else if (Block == &cfg.getExit()) {
         // Labeling exit block
         BlockStream << "END";
+    } else if (Block->empty()) {
+        // While loops make empty blocks
+        BlockStream << "LOOP";
     } else {
         for (const CFGElement &Element : *Block) {
             if (Element.getKind() == CFGElement::Statement) {
