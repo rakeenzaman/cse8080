@@ -41,6 +41,9 @@ public:
             for (CFGBlock::const_succ_iterator I = Block->succ_begin(); I != Block->succ_end(); ++I) {
                 if (const CFGBlock *Succ = *I) {
                     DotFile << "  Block" << Block->getBlockID() << " -> Block" << Succ->getBlockID() << ";\n";
+
+                    // for testing
+                    cout << "  Block" << Block->getBlockID() << " -> Block" << Succ->getBlockID() << ";\n";
                 }
             }
         }
@@ -147,31 +150,5 @@ void VisitBlock(const CFGBlock *Block, ASTContext &Context, ofstream& DotFile, c
     // Printing everything out in DOT format
     DotFile << "  Block" << Block->getBlockID() << " [label=\"" << escapeDoubleQuotes(BlockStream.str()) << "\\l\"];\n";
 }
-
-
-// Helper function to determine statement label based on statement type
-string GetStatementLabel(const Stmt *Statement) {
-    if (!Statement) return "Basic Block";
-
-    // Recursively check the nested statements
-    if (const CompoundStmt *CompoundStatement = dyn_cast<CompoundStmt>(Statement)) {
-        for (const auto &Child : CompoundStatement->children()) {
-            string label = GetStatementLabel(Child);
-            if (label != "Basic Block") {
-                return label;
-            }
-        }
-    } else if (isa<IfStmt>(Statement)) {
-        return "If";
-    } else if (isa<ForStmt>(Statement)) {
-        return "For";
-    } else if (isa<WhileStmt>(Statement)) {
-        return "While";
-    } else if (isa<DoStmt>(Statement)) {
-        return "Do-While";
-    }
-    return "Basic Block";
-}
-
 
 };

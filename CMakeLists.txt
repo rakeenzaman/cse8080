@@ -8,6 +8,21 @@ find_package(Clang REQUIRED CONFIG)
 
 set(SOURCE_FILES main.cpp)
 
+enable_testing()
+
+add_subdirectory(googletest)
+
+set(Headers
+  classes/CFGVisitor.hpp
+  classes/MyASTConsumer.hpp
+  classes/MyFrontendAction.hpp
+)
+
+add_library(Program INTERFACE)
+target_include_directories(Program INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/classes)
+
+add_subdirectory(test)
+
 add_executable(cfg ${SOURCE_FILES})
 
 add_definitions(${LLVM_DEFINITIONS})

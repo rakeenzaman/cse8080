@@ -45,7 +45,6 @@ app.post('/run-command', (req, res) => {
           res.send({ data, stderr });
         }
     });
-      // res.send({ stdout, stderr });
   });
 });
 
