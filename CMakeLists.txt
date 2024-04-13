@@ -25,6 +25,11 @@ add_subdirectory(test)
 
 add_executable(cfg ${SOURCE_FILES})
 
+set_target_properties(cfg PROPERTIES
+  CXX_STANDARD 17
+  CXX_STANDARD_REQUIRED ON
+)
+
 add_definitions(${LLVM_DEFINITIONS})
 add_definitions(${CLANG_DEFINITIONS})
 include_directories(${LLVM_INCLUDE_DIRS})
