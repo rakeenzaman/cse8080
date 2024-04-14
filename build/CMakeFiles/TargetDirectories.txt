@@ -1,8 +1,0 @@
-/home/ubuntu/Desktop/project test/build/CMakeFiles/intrinsics_gen.dir
-/home/ubuntu/Desktop/project test/build/CMakeFiles/omp_gen.dir
-/home/ubuntu/Desktop/project test/build/CMakeFiles/acc_gen.dir
-/home/ubuntu/Desktop/project test/build/CMakeFiles/RISCVTargetParserTableGen.dir
-/home/ubuntu/Desktop/project test/build/CMakeFiles/clang-tablegen-targets.dir
-/home/ubuntu/Desktop/project test/build/CMakeFiles/cfg.dir
-/home/ubuntu/Desktop/project test/build/CMakeFiles/edit_cache.dir
-/home/ubuntu/Desktop/project test/build/CMakeFiles/rebuild_cache.dir
