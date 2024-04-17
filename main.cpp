@@ -21,6 +21,10 @@ using namespace llvm;
 static cl::opt<string> InputFile(cl::Positional, cl::desc("<input file>"), cl::Required);
 
 int main(int argc, const char *argv[]) {
+     /**
+     * In this function, a dot file is created and the code from input.cpp is parsed and put into a string.
+     * With these two objects, an instance of MyFrontendAction is created.
+     */
     cl::ParseCommandLineOptions(argc, argv, "CFG Generator");
     // Creates DOT File
     ofstream DotFile("cfg.dot");

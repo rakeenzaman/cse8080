@@ -17,6 +17,11 @@ using namespace clang;
 using namespace clang::tooling;
 using namespace llvm;
 
+/**
+ * This class parses the AST to look for functions.
+ */
+
+
 class MyASTConsumer : public ASTConsumer {
 public:
     vector<vector<string>> getFunctionParamsAsVector(const FunctionDecl *funcDecl) {
@@ -48,6 +53,9 @@ public:
     MyASTConsumer(const string& code, ofstream& DotFile) : code_(code), DotFile(DotFile) {}
 
     void HandleTranslationUnit(ASTContext &Context) override {
+    /**
+     * Finds functions in the AST and runs ProcessFunction() on them.
+     */
 
     ASTConsumer::HandleTranslationUnit(Context);
 
@@ -74,6 +82,9 @@ public:
 }
 
 void ProcessFunction(const FunctionDecl *funcDecl, ASTContext &Context) {
+    /**
+     * Creates CFG for every function and calls VisitCFG() on these CFGs
+     */
     string FunctionName = funcDecl->getNameAsString();
     string FunctionType = funcDecl->getReturnType().getAsString();
     string FunctionParameters = funcParamVectorToString(getFunctionParamsAsVector(funcDecl));

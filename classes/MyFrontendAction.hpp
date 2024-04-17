@@ -17,12 +17,19 @@ using namespace clang;
 using namespace clang::tooling;
 using namespace llvm;
 
+/**
+ * This class creates an instance of MyASTConsumer.
+ */
+
+
 class MyFrontendAction : public ASTFrontendAction {
 public:
     MyFrontendAction(const string& code, ofstream& DotFile) : code_(code), DotFile(DotFile) {}
 
-    // Creating an instance of MyASTConsumer
     unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override {
+        /**
+         * Creates an instance of MyASTConsumer.
+         */
         return make_unique<MyASTConsumer>(code_, DotFile);
     }
 

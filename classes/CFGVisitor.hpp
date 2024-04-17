@@ -20,12 +20,20 @@ using namespace clang;
 using namespace clang::tooling;
 using namespace llvm;
 
+/**
+ * This class visits CFGs, grabs the relevant data per CFG block, and prints out the CFG information in DOT format.
+ */
+
 class CFGVisitor {
 public:
     CFGVisitor(ofstream& DotFile, ASTContext &Context, const string &FunctionName, const string &FunctionType, const string &FunctionParameters)
         : DotFile(DotFile), Context(Context), FunctionName(FunctionName), FunctionType(FunctionType), FunctionParameters(FunctionParameters) {}
 
     void VisitCFG(const CFG& cfg) {
+        /**
+         * Responsible for the main structure of the DOT graph
+         */
+
 
         //Starting off the DOT graph
         DotFile << "digraph \"" << (FunctionName + ";" + FunctionType + ";" + FunctionParameters) << "\" {\n";
@@ -51,14 +59,10 @@ public:
         DotFile << "}\n";
     }
 
-private:
-    ofstream& DotFile;
-    ASTContext &Context;
-    string FunctionName;
-    string FunctionType;
-    string FunctionParameters;
-
     void PrintStatement(const Stmt *S, ASTContext &Context, raw_string_ostream &Stream) {
+    /**
+     * Responsible for printing out the finer details of blocks that are not entry or exit blocks.
+     */
     if (!S) return;
 
     SourceManager &SM = Context.getSourceManager();
@@ -112,6 +116,9 @@ private:
 }
 
 string escapeDoubleQuotes(const string& input) {
+    /**
+     * Escapes double quotes so front-end does not break
+     */
     string output;
 
     for (char ch : input) {
@@ -125,7 +132,10 @@ string escapeDoubleQuotes(const string& input) {
 }
 
 // Visiting blocks of the CFG built by clang
-void VisitBlock(const CFGBlock *Block, ASTContext &Context, ofstream& DotFile, const CFG &cfg) { 
+void VisitBlock(const CFGBlock *Block, ASTContext &Context, ofstream& DotFile, const CFG &cfg) {
+    /**
+     * Responsible for the text inside of the visualized blocks, specifically for entry, exit, and loop blocks.
+     */
     string BlockLabel;
     raw_string_ostream BlockStream(BlockLabel);
 
@@ -150,5 +160,12 @@ void VisitBlock(const CFGBlock *Block, ASTContext &Context, ofstream& DotFile, c
     // Printing everything out in DOT format
     DotFile << "  Block" << Block->getBlockID() << " [label=\"" << escapeDoubleQuotes(BlockStream.str()) << "\\l\"];\n";
 }
+
+private:
+    ofstream& DotFile;
+    ASTContext &Context;
+    string FunctionName;
+    string FunctionType;
+    string FunctionParameters;
 
 };
