@@ -222,3 +222,16 @@ body {
     margin: auto;
 }
 
+.documentation-link {
+    text-decoration: none;
+    color: #75C4FF;
+    transition: ease-in-out 0.2s;
+    font-size: 12px;
+}
+
+.documentation-link:hover {
+    letter-spacing: 0.1px;
+    transition: ease-in-out 0.2s;
+    color: white;
+}
+
